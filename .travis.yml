@@ -1,5 +1,5 @@
 dist: trusty
-sudo: false
+sudo: required
 
 language: java
 
@@ -20,7 +20,8 @@ addons:
 env:
   global:
     - LUAROCKS=2.4.2
-    - OPENSSL=1.0.2l
+    - OPENSSL=1.0.2o
+    - CISCOSSL=6.2.238
     - CASSANDRA=2.2.8
     - OPENRESTY_BASE=1.11.2.4
     - OPENRESTY_LATEST=1.11.2.4

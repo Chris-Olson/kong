@@ -1,5 +1,7 @@
 set -e
 
+SSL_VER=$OPENSSL.$CISCOSSL
+CISCOSSL_INSTALL=/usr/local/cisco
 #---------
 # Download
 #---------
@@ -9,11 +11,17 @@ LUAROCKS_DOWNLOAD=$DOWNLOAD_CACHE/luarocks-$LUAROCKS
 
 mkdir -p $OPENSSL_DOWNLOAD $OPENRESTY_DOWNLOAD $LUAROCKS_DOWNLOAD
 
-if [ ! "$(ls -A $OPENSSL_DOWNLOAD)" ]; then
-  pushd $DOWNLOAD_CACHE
-    curl -L http://www.openssl.org/source/openssl-$OPENSSL.tar.gz | tar xz
-  popd
-fi
+# We will install our side-by-side ciscoSSL
+# But first we remove the libssl-dev that is no longer useful to us
+sudo apt-get remove libssl-dev
+sudo dpkg -i ./pkg/ciscossl_$SSL_VER-1_amd64.deb
+sudo dpkg -i ./pkg/ciscossl-dev_$SSL_VER-1_amd64.deb
+
+# if [ ! "$(ls -A $OPENSSL_DOWNLOAD)" ]; then
+#   pushd $OPENSSL_DOWNLOAD
+#     touch ciscossl_downloaded
+#   popd
+# fi
 
 if [ ! "$(ls -A $OPENRESTY_DOWNLOAD)" ]; then
   pushd $DOWNLOAD_CACHE
@@ -34,18 +42,18 @@ LUAROCKS_INSTALL=$INSTALL_CACHE/luarocks-$LUAROCKS
 
 mkdir -p $OPENSSL_INSTALL $OPENRESTY_INSTALL $LUAROCKS_INSTALL
 
-if [ ! "$(ls -A $OPENSSL_INSTALL)" ]; then
-  pushd $OPENSSL_DOWNLOAD
-    ./config shared --prefix=$OPENSSL_INSTALL
-    make
-    make install
-  popd
-fi
+# if [ ! "$(ls -A $OPENSSL_INSTALL)" ]; then
+#  pushd $OPENSSL_INSTALL
+#     touch ciscossl_installed
+#  popd
+# fi
 
 if [ ! "$(ls -A $OPENRESTY_INSTALL)" ]; then
   OPENRESTY_OPTS=(
     "--prefix=$OPENRESTY_INSTALL"
-    "--with-openssl=$OPENSSL_DOWNLOAD"
+    # "--with-openssl=$OPENSSL_DOWNLOAD"
+    "--with-cc-opt=-I${CISCOSSL_INSTALL}/include/"
+    "--with-ld-opt=-L${CISCOSSL_INSTALL}/lib/"
     "--with-ipv6"
     "--with-pcre-jit"
     "--with-http_ssl_module"
@@ -74,7 +82,7 @@ if [ ! "$(ls -A $LUAROCKS_INSTALL)" ]; then
   popd
 fi
 
-export OPENSSL_DIR=$OPENSSL_INSTALL # for LuaSec install
+export OPENSSL_DIR=$CISCOSSL_INSTALL  # for LuaSec install
 
 export PATH=$PATH:$OPENRESTY_INSTALL/nginx/sbin:$OPENRESTY_INSTALL/bin:$LUAROCKS_INSTALL/bin
 
